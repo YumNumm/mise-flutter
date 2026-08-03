@@ -1,81 +1,50 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-currentDir="$(dirname $0)"
-
+currentDir="$(cd "$(dirname "$0")" && pwd)"
 source "${currentDir}/jq-downloader"
 source "${currentDir}/utils.sh"
 
+cleanup_install_path() {
+  if [[ -n "${ASDF_INSTALL_PATH:-}" && -d "${ASDF_INSTALL_PATH}" ]]; then
+    rm -rf "${ASDF_INSTALL_PATH}"
+  fi
+}
+
 install() {
-
-  if [ "${ASDF_INSTALL_TYPE}" == "ref" ]; then
-    echo "Only binary versions are supported"
-    exit 1
-  fi
-  
-  local urlPrefix="${FLUTTER_STORAGE_BASE_URL}/flutter_infra_release/releases"
-  
-  local versionListUrl="${FLUTTER_STORAGE_BASE_URL}/flutter_infra_release/releases/releases_macos.json"
-  
-  if [ "$(uname -s)" == "Linux" ]; then
-    versionListUrl="${FLUTTER_STORAGE_BASE_URL}/flutter_infra_release/releases/releases_linux.json"
-  fi
-  
-  local releasesJson="$(curl -sL "${versionListUrl}")"
-
-  local installChannel=""
-  if [[ "${ASDF_INSTALL_VERSION}" =~ ^(stable|beta|dev)$ ]]; then
-    installChannel="${BASH_REMATCH[1]}"
-  fi
-
-  local escapedInstallVersion=$(echo $ASDF_INSTALL_VERSION | sed 's/\./\\\./g;s/\+/\\\+/g')
-
-  local jsonResponse=""
-  if [ -n "${installChannel}" ]; then
-    local currentHash=$(echo "${releasesJson}" | "${JQ_BIN}" -r --arg CHANNEL "${installChannel}" '.current_release[$CHANNEL]')
-    if [ -n "${currentHash}" ] && [ "${currentHash}" != "null" ]; then
-      jsonResponse=$(echo "${releasesJson}" | "${JQ_BIN}" --arg HASH "${currentHash}" '.releases[] | select(.hash == $HASH)')
-    fi
-  fi
-
-  if [ -z "${jsonResponse}" ]; then
-    jsonResponse=$(echo "${releasesJson}" | "${JQ_BIN}" --arg VERSION "${escapedInstallVersion}" '.releases[] | select((.version + "-" + .channel) | test("^v?" + $VERSION))')
-  fi
-
-  local jsonResponseLength=$(echo "${jsonResponse}" | "${JQ_BIN}" -s 'length')
-  local filePath=$(echo "${jsonResponse}" | "${JQ_BIN}" -r '.archive' | head -n 1)
-  if [ "$(uname -s)" == "Darwin" ] && [ ${jsonResponseLength} -gt 1 ]; then
-    local arch="x64"
-    if [ "$(uname -m)" == "arm64" ]; then
-      arch="arm64"
-    fi
-
-    local channel="${installChannel}"
-    if [ -z "${channel}" ]; then
-      channel=$(echo "$ASDF_INSTALL_VERSION" | grep -oE '(stable|beta|dev)$' || echo "stable")
-    fi
-    filePath=$(echo "${jsonResponse}" | "${JQ_BIN}" -r --arg ARCH "${arch}" --arg CHANNEL "${channel}" \
-      '. | select(.dart_sdk_arch == $ARCH and .channel == $CHANNEL) | .archive' | head -n 1 )
-  fi
-
-  if [ -z "${filePath}" ]; then
-    echo "Cannot find the download url for the version: ${ASDF_INSTALL_VERSION}"
+  if [[ -z "${ASDF_INSTALL_VERSION:-}" || -z "${ASDF_INSTALL_PATH:-}" ]]; then
+    echo "ASDF_INSTALL_VERSION and ASDF_INSTALL_PATH are required" >&2
     exit 1
   fi
 
-  local url="${urlPrefix}/${filePath}"
-  local fileName="${url##*/}"
-
-  mkdir -p "${ASDF_INSTALL_PATH}"
-  cd "${ASDF_INSTALL_PATH}" || exit 1
-  curl -OJL "${url}"
-  if [ "${fileName##*.}" == "zip" ]; then
-    local tmpdir="$(mktemp -d)"
-    unzip -d "${tmpdir}" "${fileName}"
-    ( shopt -s dotglob && mv "${tmpdir}/flutter"/* "${ASDF_INSTALL_PATH}/" )
-  else
-    tar xf "${fileName}" --strip 1
+  if [[ -z "${ASDF_PLUGIN_PATH:-}" ]]; then
+    export ASDF_PLUGIN_PATH="$(cd "${currentDir}/.." && pwd)"
   fi
-  rm -f "${fileName}"
+
+  local ref remote cache_path
+  ref="$(resolve_install_ref "${ASDF_INSTALL_VERSION}")" || exit 1
+  remote="$(flutter_git_url)"
+  cache_path="$(flutter_git_cache_path)"
+
+  echo "Installing Flutter ${ASDF_INSTALL_VERSION} (ref ${ref})" >&2
+
+  ensure_git_cache
+
+  trap cleanup_install_path ERR
+  mkdir -p "$(dirname "${ASDF_INSTALL_PATH}")"
+  rm -rf "${ASDF_INSTALL_PATH}"
+
+  git clone \
+    --reference "${cache_path}" \
+    --dissociate \
+    --progress \
+    "${remote}" \
+    "${ASDF_INSTALL_PATH}"
+
+  git -C "${ASDF_INSTALL_PATH}" checkout --force "${ref}"
+  trap - ERR
+
+  echo "Flutter ${ASDF_INSTALL_VERSION} installed at ${ASDF_INSTALL_PATH}" >&2
 }
 
 download_jq_if_not_exists

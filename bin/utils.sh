@@ -20,6 +20,20 @@ flutter_git_cache_path() {
   echo "${ASDF_PLUGIN_PATH}/.git-cache"
 }
 
+ensure_git_cache() {
+  local cache_path remote
+  cache_path="$(flutter_git_cache_path)"
+  remote="$(flutter_git_url)"
+
+  if [[ ! -d "${cache_path}" ]]; then
+    mkdir -p "$(dirname "${cache_path}")"
+    git clone --bare --progress "${remote}" "${cache_path}"
+    return
+  fi
+
+  git --git-dir="${cache_path}" fetch --progress --tags origin '+refs/heads/*:refs/heads/*'
+}
+
 flutter_releases_url() {
   local base
   base="$(flutter_storage_base_url)"
