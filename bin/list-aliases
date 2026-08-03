@@ -12,7 +12,7 @@ list_aliases() {
   for channel in stable beta dev; do
     hash="$(echo "${json}" | "${JQ_BIN}" -r --arg C "${channel}" '.current_release[$C] // empty')"
     if [[ -n "${hash}" && "${hash}" != "null" ]]; then
-      name="$(version_name_for_hash "${json}" "${hash}")"
+      name="$(version_name_for_hash "${json}" "${hash}" "${channel}")"
       echo "${channel} ${name}"
     fi
   done

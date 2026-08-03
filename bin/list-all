@@ -12,8 +12,8 @@ list_all() {
   json="$(fetch_releases_json)"
   versions="$(echo "${json}" | "${JQ_BIN}" -r '
     [.releases[] | ((.version | ltrimstr("v")) + "-" + .channel)]
-    | unique
     | reverse
+    | reduce .[] as $v ([]; if .[-1] == $v then . else . + [$v] end)
     | join(" ")
   ')"
   echo "stable beta dev master main ${versions}"

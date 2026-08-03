@@ -11,7 +11,7 @@ export ASDF_PLUGIN_PATH="${root}"
 
 fail=0
 ref="$(resolve_install_ref "beta")"
-[[ "$ref" == "bbb111" ]] && echo "PASS beta->hash" || { echo "FAIL beta->hash $ref"; fail=1; }
+[[ "$ref" == "shared111" ]] && echo "PASS beta->hash" || { echo "FAIL beta->hash $ref"; fail=1; }
 ref="$(resolve_install_ref "3.41.5-stable")"
 [[ "$ref" == "sss111" ]] && echo "PASS concrete->hash" || { echo "FAIL concrete $ref"; fail=1; }
 exit "$fail"

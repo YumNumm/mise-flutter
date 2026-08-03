@@ -1,13 +1,13 @@
 {
   "base_url": "https://storage.googleapis.com/flutter_infra_release/releases",
   "current_release": {
-    "beta": "bbb111",
-    "dev": "ddd111",
+    "beta": "shared111",
+    "dev": "shared111",
     "stable": "sss111"
   },
   "releases": [
     {
-      "hash": "bbb111",
+      "hash": "shared111",
       "channel": "beta",
       "version": "3.47.0-0.3.pre",
       "dart_sdk_arch": "arm64",
@@ -21,7 +21,14 @@
       "archive": "stable/macos/flutter_macos_arm64_3.41.5-stable.zip"
     },
     {
-      "hash": "ddd111",
+      "hash": "sss111",
+      "channel": "stable",
+      "version": "3.41.5",
+      "dart_sdk_arch": "x64",
+      "archive": "stable/macos/flutter_macos_3.41.5-stable.zip"
+    },
+    {
+      "hash": "shared111",
       "channel": "dev",
       "version": "3.40.0-1.0.pre",
       "dart_sdk_arch": "arm64",

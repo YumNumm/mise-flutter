@@ -13,7 +13,7 @@ latest_stable() {
     echo "Cannot resolve latest stable" >&2
     exit 1
   fi
-  version_name_for_hash "${json}" "${hash}"
+  version_name_for_hash "${json}" "${hash}" "stable"
 }
 
 download_jq_if_not_exists

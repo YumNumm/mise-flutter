@@ -25,6 +25,13 @@ else
   echo "FAIL list-all missing 3.41.5-stable"
   fail=1
 fi
+expected_out="stable beta dev master main 3.40.0-1.0.pre-dev 3.41.5-stable 3.47.0-0.3.pre-beta"
+if [[ "${out}" == "${expected_out}" ]]; then
+  echo "PASS list-all preserves release order"
+else
+  echo "FAIL list-all order: ${out}"
+  fail=1
+fi
 
 latest="$("${root}/bin/latest-stable")"
 if [[ "${latest}" == "3.41.5-stable" ]]; then

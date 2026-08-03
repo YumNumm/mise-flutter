@@ -21,11 +21,13 @@ assert_eq() {
 }
 
 assert_eq "storage default" "https://storage.googleapis.com" "$(flutter_storage_base_url)"
-assert_eq "stable name" "3.41.5-stable" "$(version_name_for_hash "$FLUTTER_RELEASES_JSON" "sss111")"
+assert_eq "stable name" "3.41.5-stable" "$(version_name_for_hash "$FLUTTER_RELEASES_JSON" "sss111" "stable")"
+assert_eq "beta name with shared hash" "3.47.0-0.3.pre-beta" "$(version_name_for_hash "$FLUTTER_RELEASES_JSON" "shared111" "beta")"
+assert_eq "dev name with shared hash" "3.40.0-1.0.pre-dev" "$(version_name_for_hash "$FLUTTER_RELEASES_JSON" "shared111" "dev")"
 assert_eq "hash for 3.41.5-stable" "sss111" "$(hash_for_version "$FLUTTER_RELEASES_JSON" "3.41.5-stable")"
 assert_eq "hash for 3.41.5" "sss111" "$(hash_for_version "$FLUTTER_RELEASES_JSON" "3.41.5")"
 assert_eq "resolve stable" "sss111" "$(resolve_install_ref "stable")"
-assert_eq "resolve beta version" "bbb111" "$(resolve_install_ref "3.47.0-0.3.pre-beta")"
+assert_eq "resolve beta version" "shared111" "$(resolve_install_ref "3.47.0-0.3.pre-beta")"
 export FLUTTER_GIT_CACHE_PATH="/tmp/mise-flutter-test-cache"
 assert_eq "cache path override" "/tmp/mise-flutter-test-cache" "$(flutter_git_cache_path)"
 

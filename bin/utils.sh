@@ -60,26 +60,30 @@ fetch_releases_json() {
 }
 
 version_name_for_hash() {
-  local json="$1" hash="$2"
-  echo "${json}" | "${JQ_BIN}" -r --arg HASH "${hash}" '
-    .releases[]
-    | select(.hash == $HASH)
-    | ((.version | ltrimstr("v")) + "-" + .channel)
-  ' | head -n 1
+  local json="$1" hash="$2" channel="$3"
+  echo "${json}" | "${JQ_BIN}" -r --arg HASH "${hash}" --arg C "${channel}" '
+    limit(1;
+      .releases[]
+      | select(.hash == $HASH and .channel == $C)
+      | ((.version | ltrimstr("v")) + "-" + .channel)
+    )
+  '
 }
 
 hash_for_version() {
   local json="$1" version="$2"
   echo "${json}" | "${JQ_BIN}" -r --arg VERSION "${version}" '
-    .releases[]
-    | (.version | ltrimstr("v")) as $v
-    | select(
-        ($v + "-" + .channel) == $VERSION
-        or $v == $VERSION
-        or (.version + "-" + .channel) == $VERSION
+    limit(1;
+      .releases[]
+      | (.version | ltrimstr("v")) as $v
+      | select(
+          ($v + "-" + .channel) == $VERSION
+          or $v == $VERSION
+          or (.version + "-" + .channel) == $VERSION
+        )
+      | .hash
       )
-    | .hash
-  ' | head -n 1
+  '
 }
 
 resolve_install_ref() {
