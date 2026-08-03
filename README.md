@@ -17,7 +17,9 @@ mise install flutter@3.41.5-stable
 # channels (resolved to latest via releases JSON / git)
 mise install flutter@stable
 mise install flutter@beta
+mise install flutter@dev
 mise install flutter@master
+mise install flutter@main
 
 mise ls-remote flutter
 mise upgrade flutter
