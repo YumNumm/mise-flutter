@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-currentDir="$(dirname $0)"
-
+currentDir="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=jq-downloader
 source "${currentDir}/jq-downloader"
+# shellcheck source=utils.sh
 source "${currentDir}/utils.sh"
 
 list_all() {
-
-  local versionListUrl="${FLUTTER_STORAGE_BASE_URL}/flutter_infra_release/releases/releases_macos.json"
-
-  if [ "$(uname -s)" == "Linux" ]; then
-    versionListUrl="${FLUTTER_STORAGE_BASE_URL}/flutter_infra_release/releases/releases_linux.json"
-  fi
-
-  echo $(curl -sL "${versionListUrl}" | "${JQ_BIN}" -r '.releases[].version |= gsub("^v"; "") | .releases | map(.version + "-" + .channel) | reverse | join(" ")')
+  local json versions
+  json="$(fetch_releases_json)"
+  versions="$(echo "${json}" | "${JQ_BIN}" -r '
+    [.releases[] | ((.version | ltrimstr("v")) + "-" + .channel)]
+    | unique
+    | reverse
+    | join(" ")
+  ')"
+  echo "stable beta dev master main ${versions}"
 }
 
 download_jq_if_not_exists

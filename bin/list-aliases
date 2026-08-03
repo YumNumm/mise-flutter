@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+currentDir="$(cd "$(dirname "$0")" && pwd)"
+source "${currentDir}/jq-downloader"
+source "${currentDir}/utils.sh"
+
+list_aliases() {
+  local json hash name
+
+  json="$(fetch_releases_json)"
+  for channel in stable beta dev; do
+    hash="$(echo "${json}" | "${JQ_BIN}" -r --arg C "${channel}" '.current_release[$C] // empty')"
+    if [[ -n "${hash}" && "${hash}" != "null" ]]; then
+      name="$(version_name_for_hash "${json}" "${hash}")"
+      echo "${channel} ${name}"
+    fi
+  done
+
+  for channel in master main; do
+    hash="$(git ls-remote --heads "$(flutter_git_url)" "refs/heads/${channel}" | awk '{print $1}')"
+    if [[ -n "${hash}" ]]; then
+      echo "${channel} ${hash}"
+    fi
+  done
+}
+
+download_jq_if_not_exists
+list_aliases

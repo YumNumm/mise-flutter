@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+currentDir="$(cd "$(dirname "$0")" && pwd)"
+source "${currentDir}/jq-downloader"
+source "${currentDir}/utils.sh"
+
+latest_stable() {
+  local json hash
+  json="$(fetch_releases_json)"
+  hash="$(echo "${json}" | "${JQ_BIN}" -r '.current_release.stable // empty')"
+  if [[ -z "${hash}" ]]; then
+    echo "Cannot resolve latest stable" >&2
+    exit 1
+  fi
+  version_name_for_hash "${json}" "${hash}"
+}
+
+download_jq_if_not_exists
+latest_stable
