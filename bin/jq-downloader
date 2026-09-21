@@ -16,9 +16,18 @@ get_jq_filename() {
 
 download_jq_if_not_exists() {
 
-  jq_path="$(type -p jq || echo ${currentDir}/jq)"
+  local jq_path="${currentDir}/jq" candidate
+  # A mise/asdf shim can resolve Flutter again while listing its aliases,
+  # recursively invoking this plugin. Select an executable outside shims.
+  while IFS= read -r candidate; do
+    case "${candidate}" in
+      */shims/jq | shims/jq) continue ;;
+    esac
+    jq_path="${candidate}"
+    break
+  done < <(type -aP jq || true)
 
-  if [[ -z "$(type -p ${jq_path})" ]]; then
+  if [[ ! -x "${jq_path}" ]]; then
     curl -sL "https://github.com/jqlang/jq/releases/latest/download/$(get_jq_filename)" -o "${jq_path}"
     chmod +x "${jq_path}"
   fi
